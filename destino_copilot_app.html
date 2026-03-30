@@ -322,9 +322,11 @@ function setGrupo(g){
 function isDone(jid,g){for(var b=0;b<BLOCOS.length;b++)for(var c=0;c<BLOCOS[b].criterios.length;c++)if(gS(jid,g,BLOCOS[b].criterios[c].id)==='')return false;return true;}
 function filled(jid,g){var n=0;for(var b=0;b<BLOCOS.length;b++)for(var c=0;c<BLOCOS[b].criterios.length;c++)if(gS(jid,g,BLOCOS[b].criterios[c].id)!=='')n++;return n;}
 
-function blocoAvgJ(jid,g,bid){for(var b=0;b<BLOCOS.length;b++){if(BLOCOS[b].id!==bid)continue;var s=0,n=0;for(var c=0;c<BLOCOS[b].criterios.length;c++){var v=gS(jid,g,BLOCOS[b].criterios[c].id);if(v!==''){s+=parseFloat(v);n++;}}return n>0?s/n:0;}return 0;}
-function blocoAvg(g,bid){var ids=jIds(),t=0,n=0;for(var i=0;i<ids.length;i++){var s=blocoAvgJ(ids[i],g,bid);if(s>0){t+=s;n++;}}return n>0?t/n:0;}
-function totalAvg(g){var ids=jIds(),t=0,n=0;for(var i=0;i<ids.length;i++){var s=0,c=0;for(var b=0;b<BLOCOS.length;b++){var bs=blocoAvgJ(ids[i],g,BLOCOS[b].id);if(bs>0){s+=bs;c++;}}if(c>0){t+=s/c;n++;}}return n>0?t/n:0;}
+function blocoSumJ(jid,g,bid){for(var b=0;b<BLOCOS.length;b++){if(BLOCOS[b].id!==bid)continue;var s=0;for(var c=0;c<BLOCOS[b].criterios.length;c++){var v=gS(jid,g,BLOCOS[b].criterios[c].id);if(v!=='')s+=parseFloat(v);}return s;}return 0;}
+function blocoMaxPts(bid){for(var b=0;b<BLOCOS.length;b++){if(BLOCOS[b].id===bid)return BLOCOS[b].criterios.length*10;}return 0;}
+function blocoAvg(g,bid){var ids=jIds(),t=0,n=0;for(var i=0;i<ids.length;i++){var s=blocoSumJ(ids[i],g,bid);if(s>0){t+=s;n++;}}return n>0?t/n:0;}
+function totalAvg(g){var ids=jIds(),t=0,n=0;for(var i=0;i<ids.length;i++){var s=0;for(var b=0;b<BLOCOS.length;b++)s+=blocoSumJ(ids[i],g,BLOCOS[b].id);if(s>0){t+=s;n++;}}return n>0?t/n:0;}
+function totalMax(){var s=0;for(var b=0;b<BLOCOS.length;b++)s+=BLOCOS[b].criterios.length*10;return s;}
 
 function renderGruposNav(){
   var nav=document.getElementById('grupos-nav');nav.innerHTML='';
@@ -458,7 +460,7 @@ function renderRanking(){
     item.innerHTML='<div class="premio-icon">'+pr.icon+'</div>'+
       '<div style="flex:1;min-width:0"><div class="premio-cat '+pr.cls+'">'+(bl?bl.premioLabel:'')+'</div>'+
       '<div class="premio-grupo">'+(bestGi>=0?GRUPOS[bestGi]:'—')+(bestGi>=0&&gN(bestGi)?'<small>'+gN(bestGi)+'</small>':'')+'</div></div>'+
-      '<div class="premio-pts '+pr.cls+'">'+(bestPts>0?bestPts.toFixed(2)+' pts':'—')+'</div>';
+      '<div class="premio-pts '+pr.cls+'">'+(bestPts>0?bestPts.toFixed(1)+' / '+blocoMaxPts(pr.blocoId)+' pts':'—')+'</div>';
     wrap.appendChild(item);
   }
 }
@@ -466,11 +468,11 @@ function renderRanking(){
 function renderBars(){
   var wrap=document.getElementById('bars-wrap');wrap.innerHTML='';
   for(var gi=0;gi<GRUPOS.length;gi++){
-    var avg=totalAvg(gi);var pct=avg>0?(avg/10)*100:0;
+    var avg=totalAvg(gi);var maxT=totalMax();var pct=avg>0?(avg/maxT)*100:0;
     var row=document.createElement('div');row.className='bar-row';
     row.innerHTML='<div class="bar-label">'+GRUPOS[gi]+'</div>'+
       '<div class="bar-track"><div class="bar-fill" style="width:'+Math.min(pct,100).toFixed(1)+'%"></div></div>'+
-      '<div class="bar-val">'+(avg>0?avg.toFixed(2):'—')+'</div>';
+      '<div class="bar-val">'+(avg>0?avg.toFixed(1):'—')+'</div>';
     wrap.appendChild(row);
   }
 }
