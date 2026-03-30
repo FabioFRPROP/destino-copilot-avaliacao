@@ -273,7 +273,7 @@ window.entrarSessao=function(){
   if(!s){showMsg('Digite o código da sessão!','err');return;}
   showMsg('Entrando...','');
   meuNome=n; sessaoId=s;
-  meuJuradorId=n.replace(/\s+/g,'_').toLowerCase()+'_'+Date.now();
+  meuJuradorId=n.replace(/\s+/g,'_').toLowerCase().replace(/[^a-z0-9_]/g,'');
   set(ref(db,'sessoes/'+sessaoId+'/jurados/'+meuJuradorId),{nome:meuNome,online:true,lastSeen:serverTimestamp()})
     .then(iniciarApp).catch(function(){showMsg('Erro ao conectar.','err');});
 };
@@ -436,9 +436,25 @@ function renderOnline(){
   var ids=jIds();
   if(!ids.length){wrap.innerHTML='<div style="padding:12px 18px;font-size:13px;color:var(--text-muted)">Nenhum jurado ainda.</div>';return;}
   for(var i=0;i<ids.length;i++){
-    var jnome=juradosInfo[ids[i]]?juradosInfo[ids[i]].nome:ids[i];
-    var chip=document.createElement('div');chip.className='online-chip';
+    var jid=ids[i];
+    var jnome=juradosInfo[jid]?juradosInfo[jid].nome:jid;
+    var chip=document.createElement('div');chip.className='online-chip';chip.style.paddingRight='6px';
     chip.innerHTML='<span class="online-chip-dot" style="background:'+J_COLORS[i%J_COLORS.length]+'"></span>'+jnome;
+    var x=document.createElement('span');
+    x.textContent='×';
+    x.style.cssText='margin-left:4px;cursor:pointer;font-size:14px;color:var(--text-muted);font-weight:700;line-height:1;padding:0 2px;border-radius:3px;';
+    x.title='Remover '+jnome;
+    x.onmouseover=function(){this.style.color='#A32D2D';this.style.background='#FCEBEB';};
+    x.onmouseout=function(){this.style.color='var(--text-muted)';this.style.background='transparent';};
+    (function(jjid,jjnome){
+      x.onclick=function(){
+        if(confirm('Remover "'+jjnome+'" da sessão?')){
+          set(ref(db,'sessoes/'+sessaoId+'/jurados/'+jjid),null);
+          set(ref(db,'sessoes/'+sessaoId+'/notas/'+jjid),null);
+        }
+      };
+    })(jid,jnome);
+    chip.appendChild(x);
     wrap.appendChild(chip);
   }
 }
