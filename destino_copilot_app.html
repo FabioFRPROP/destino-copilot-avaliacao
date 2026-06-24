@@ -341,16 +341,23 @@ function iniciarApp(){
   });
 }
 
-function gS(jid,g,cid){if(!dbData[jid]||!dbData[jid][g])return '';var v=dbData[jid][g][cid];return(v!==undefined&&v!==null)?v:'';}
-function gN(g){return(dbData['_nomes']&&dbData['_nomes'][g])||'';}
-function gC(jid,g){return(dbData[jid]&&dbData[jid]['_coment']&&dbData[jid]['_coment'][g])||'';}
+function gS(jid,g,cid){
+  var gk=String(g);
+  if(!dbData[jid]) return '';
+  var gdata=dbData[jid][gk]||dbData[jid][parseInt(gk)];
+  if(!gdata) return '';
+  var v=gdata[cid];
+  return(v!==undefined&&v!==null)?v:'';
+}
+function gN(g){var gk=String(g);return(dbData['_nomes']&&dbData['_nomes'][gk])||'';}
+function gC(jid,g){var gk=String(g);return(dbData[jid]&&dbData[jid]['_coment']&&dbData[jid]['_coment'][gk])||'';}
 function jIds(){return Object.keys(juradosInfo);}
 
-window.onNomeChange=function(){var u={};u['notas/_nomes/'+currentGrupo]=document.getElementById('grupo-nome').value;update(ref(db,'sessoes/'+sessaoId),u);};
+window.onNomeChange=function(){var u={};u['notas/_nomes/'+String(currentGrupo)]=document.getElementById('grupo-nome').value;update(ref(db,'sessoes/'+sessaoId),u);};
 window.saveGrupo=function(){var m=document.getElementById('status-msg');m.textContent='Avaliação salva!';m.className='status-msg ok';setTimeout(function(){m.textContent='';m.className='status-msg';},3000);};
 
-function setScoreDB(cid,val){var v=parseFloat(val);set(ref(db,'sessoes/'+sessaoId+'/notas/'+meuJuradorId+'/'+currentGrupo+'/'+cid),(val===''||isNaN(v))?null:v);}
-function setComentDB(txt){set(ref(db,'sessoes/'+sessaoId+'/notas/'+meuJuradorId+'/_coment/'+currentGrupo),txt);}
+function setScoreDB(cid,val){var v=parseFloat(val);set(ref(db,'sessoes/'+sessaoId+'/notas/'+meuJuradorId+'/'+String(currentGrupo)+'/'+cid),(val===''||isNaN(v))?null:v);}
+function setComentDB(txt){set(ref(db,'sessoes/'+sessaoId+'/notas/'+meuJuradorId+'/_coment/'+String(currentGrupo)),txt);}
 
 function setGrupo(g){currentGrupo=g;renderGruposNav();renderCriterios();renderComentarios();}
 
@@ -361,15 +368,35 @@ function blocoSum(jid,g,bid){
   for(var b=0;b<BLOCOS.length;b++){
     if(BLOCOS[b].id!==bid) continue;
     var s=0;
-    for(var c=0;c<BLOCOS[b].criterios.length;c++){var v=gS(jid,g,BLOCOS[b].criterios[c].id);if(v!=='')s+=parseFloat(v);}
+    for(var c=0;c<BLOCOS[b].criterios.length;c++){
+      var v=gS(jid,String(g),BLOCOS[b].criterios[c].id);
+      if(v!==''&&v!==null&&v!==undefined) s+=parseFloat(v);
+    }
     return s;
   }
   return 0;
 }
-function blocoMaxPts(bid){for(var b=0;b<BLOCOS.length;b++)if(BLOCOS[b].id===bid)return BLOCOS[b].criterios.length*10;return 0;}
-function blocoAvg(g,bid){var ids=jIds(),t=0,n=0;for(var i=0;i<ids.length;i++){var s=blocoSum(ids[i],g,bid);if(s>0){t+=s;n++;}}return n>0?t/n:0;}
-function totalAvg(g){var ids=jIds(),t=0,n=0;for(var i=0;i<ids.length;i++){var s=0;for(var b=0;b<BLOCOS.length;b++)s+=blocoSum(ids[i],g,BLOCOS[b].id);if(s>0){t+=s;n++;}}return n>0?t/n:0;}
-function totalMax(){var s=0;for(var b=0;b<BLOCOS.length;b++)s+=BLOCOS[b].criterios.length*10;return s;}
+function blocoMaxPts(bid){return 0;}
+function totalMax(){return 1000;}
+function blocoAvg(g,bid){
+  var ids=jIds();
+  if(ids.length===0) return 0;
+  var t=0;
+  for(var i=0;i<ids.length;i++){
+    t+=blocoSum(ids[i],g,bid);
+  }
+  return t;
+}
+function totalAvg(g){
+  var ids=jIds();
+  if(ids.length===0) return 0;
+  var t=0;
+  for(var i=0;i<ids.length;i++){
+    for(var b=0;b<BLOCOS.length;b++) t+=blocoSum(ids[i],g,BLOCOS[b].id);
+  }
+  return t;
+}
+
 
 function renderGruposNav(){
   var nav=document.getElementById('grupos-nav');nav.innerHTML='';
@@ -491,7 +518,7 @@ function renderRanking(){
     item.innerHTML='<div class="premio-icon">'+pr.icon+'</div>'+
       '<div style="flex:1;min-width:0"><div class="premio-cat '+pr.cls+'">'+blocoLabel+'</div>'+
       '<div class="premio-grupo">'+(bestGi>=0?GRUPOS[bestGi]:'—')+(bestGi>=0&&gN(bestGi)?'<small>'+gN(bestGi)+'</small>':'')+'</div></div>'+
-      '<div class="premio-pts '+pr.cls+'">'+(bestPts>0?bestPts.toFixed(1)+'/'+maxPts:'—')+'</div>';
+      '<div class="premio-pts '+pr.cls+'">'+(bestPts>0?bestPts.toFixed(1)+' pts':'—')+'</div>';
     wrap.appendChild(item);
   }
 }
